@@ -1,0 +1,44 @@
+Hello! Welcome to the DAQ software.
+
+WARNING: This software is incomplete and currently under development!
+
+TIPS:
+
+In the terminal, the client will output when a request is sent and when it receives a reply.
+Both of these for a waveform may look weird as it outputs a given list of data. To clear this up 
+the list is given as: [Waveform Type, Frequency, Amplitude, Shift, Offset, Sample Rate].
+
+Make sure the box being used supports analog and digital output.
+
+
+USING CUSTOM ANALOG OUTPUT:
+This program supports custom analog output. To do so, select "Custom" in the waveform shape dropdown
+box. Following selection a new textbox will appear, prompting you to input a file name. This file
+MUST be a .xlsx (New Microsoft Excel workbook) file. This file must also be in the same folder as
+the server code. I.e. if the server code is found in Downloads/gui/ the workbook must also be in 
+Downloads/gui/. 
+
+In the workbook, use only the first column on the first sheet and input the data in the order you
+wish it to be output. If using multiple channels, place the data in an alternating manner. That is,
+if you are using channel one and channel two, the data should be placed such that cell A1 has data
+for channel one, A2 has date for channel two, A3 has data for channel one, A4 has data for channel 
+two, etc etc.. NOTE: This format is set to change eventually when support for multiple channels is
+done finished such that the data for channel one would be in column A and the date for channel two
+would be in column B.
+
+
+
+
+
+TO BE DONE:
+-Refinement of custom output
+	*Why does sample rate need to be half of total cells to properly generate wave?
+-Support for turning channels on/off
+	*This is kind of working. Error thrown only when attempting to us multiple inputs
+	*Need to add proper wave functionality for multiple outputs. Currently it splits the buffer
+	between channels instead of giving channels the proper amount of necessary points
+-Digital output
+-Dual Wave output?
+	
+	*This should be easily implementable (maybe)
+-Input display vs Output Display?
