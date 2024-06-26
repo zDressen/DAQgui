@@ -96,7 +96,7 @@ class AnalogConfigTab (QWidget) :
     waveform_amplitude_textline2 = QLineEdit('1')
     custom_file_label = QLabel("If using a file input, please type it below:")
     custom_file_textline = QLineEdit('YourFileName.xlsx')
-    custom_file_textline = QLineEdit('YourFileName.xlsx')
+    custom_file_textline2 = QLineEdit('YourFileName.xlsx')
     waveform_y_label = QLabel("Y-Offset (V)")
     waveform_y_textline = QLineEdit('0')
     waveform_y_textline2 = QLineEdit('0')
@@ -136,7 +136,7 @@ class AnalogConfigTab (QWidget) :
         layout.addWidget(self.waveform_section_label,3,0)
         layout.addWidget(self.waveform_type_label,4,0)
         layout.addWidget(self.waveform_type_box,5,0)
-        layout.addWidget(self.waveform_frequency_label,6,0)
+        layout.addWidget(self.waveform_frequency_label,8,0)
         layout.addWidget(self.waveform_frequency_textline,9,0)
         layout.addWidget(self.waveform_amplitude_label,10,0)
         layout.addWidget(self.waveform_amplitude_textline,11,0)
@@ -174,7 +174,6 @@ class AnalogConfigTab (QWidget) :
             self.waveform_shift_textline2.textChanged.connect(self.UpdateWaveformShift)
             self.waveform_amplitude_textline2.textChanged.connect(self.UpdateWaveformAmplitude)
             self.waveform_y_textline2.textChanged.connect(self.UpdateOffset)
-            self.channel_update_button2.clicked.connect(self.UpdateChannels)
             self.type_output_box2.activated.connect(self.UpdateOutputType)
         else:
             self.waveform_type_box2.setParent(None)
@@ -197,9 +196,9 @@ class AnalogConfigTab (QWidget) :
     def UpdateWaveform2(self):
         global waveform2
         waveform2 = self.waveform_type_box2.currentText()
-        if waveform == "Custom":
+        if waveform2 == "Custom":
             self.layout.addWidget(self.custom_file_textline2,7,1)
-            self.custom_file_textline2.textChanged.connect(self.UpdateCustomFile)
+            self.custom_file_textline2.textChanged.connect(self.UpdateCustomFile2)
         else:
             self.custom_file_textline2.setParent(None)
     def UpdateWaveformFreq(self):
@@ -220,9 +219,9 @@ class AnalogConfigTab (QWidget) :
     def UpdateCustomFile(self):
         global custom_file
         custom_file = self.custom_file_textline.text()
-        if self.multiple_wave_types.isChecked():
-            global custom_file2
-            custom_file2 = self.custom_file_textline2.text()
+    def UpdateCustomFile2(self):
+        global custom_file2
+        custom_file2 = self.custom_file_textline2.text()
     def UpdateOffset(self):
         global wave_offset
         global wave_amplitude
@@ -247,10 +246,10 @@ class AnalogConfigTab (QWidget) :
             self.channel_box.addItem(channels[i])
     def UpdateOutputType(self):
         global wave_io_type
-        wave_io_type =  self.type_output_box.text()
+        wave_io_type =  self.type_output_box.currentText()
         if self.multiple_wave_types.isChecked():
             global wave_io_type2
-            wave_io_type2 = self.type_output_box2.text()
+            wave_io_type2 = self.type_output_box2.currentText()
         
 class DigitalConfigTab (QWidget):
     # Initialize Widgets
@@ -465,25 +464,25 @@ class DisplayTab (QWidget) :
             global wave_io_type2
             if waveform == "Custom" :
                 if waveform2 == "Custom" :
-                    talk_to_server([True,waveform,custom_file,waveform2,custom_file2,int(self.sample_rate_edit.text()),high_chan,low_chan])
+                    talk_to_server([True,waveform,custom_file,waveform2,custom_file2,int(self.sample_rate_edit.text()),high_chan,low_chan,wave_io_type,wave_io_type2])
                 else:
                     talk_to_server([True,waveform,custom_file,waveform2,wave_frequency2,wave_shift2,
-                                    wave_amplitude2,wave_offset2,int(self.sample_rate_edit.text()),high_chan,low_chan])
+                                    wave_amplitude2,wave_offset2,int(self.sample_rate_edit.text()),high_chan,low_chan,wave_io_type,wave_io_type2])
             else:
                 if waveform2 == "Custom" :
                     talk_to_server([True,waveform,wave_frequency,wave_shift,wave_amplitude,
                                     wave_offset,waveform2,custom_file2,int(self.sample_rate_edit.text()),
-                                    high_chan,low_chan])
+                                    high_chan,low_chan,wave_io_type,wave_io_type2])
                 else:    
                     talk_to_server([True,waveform,wave_frequency,wave_shift,wave_amplitude,
                                     wave_offset,waveform2,wave_frequency2,wave_shift2,
-                                    wave_amplitude2,wave_offset2,int(self.sample_rate_edit.text()),high_chan,low_chan])
+                                    wave_amplitude2,wave_offset2,int(self.sample_rate_edit.text()),high_chan,low_chan,wave_io_type,wave_io_type2])
         else:
             if waveform == "Custom" :
-                talk_to_server([False,waveform,custom_file,int(self.sample_rate_edit.text()),high_chan,low_chan])
+                talk_to_server([False,waveform,custom_file,int(self.sample_rate_edit.text()),high_chan,low_chan,wave_io_type])
             else:
                 talk_to_server([False,waveform,wave_frequency,wave_shift,wave_amplitude,
-                                wave_offset,int(self.sample_rate_edit.text()),high_chan,low_chan])
+                                wave_offset,int(self.sample_rate_edit.text()),high_chan,low_chan,wave_io_type])
                             
     def on_wave_stop_clicked(self):
         talk_to_server('Stop Wave')
