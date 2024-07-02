@@ -175,11 +175,11 @@ def MCUSB_ao(waveform_stats):
     scan_options = ScanOption.CONTINUOUS
     if waveform_stats[0] == 'Custom':
         samples_per_channel = waveform_stats[2]
-        sample_rate = samples_per_channel
+        sample_rate = waveform_stats[3]
         file_name = waveform_stats[1]
-        samples_per_cycle = sample_rate
-        analog_low_channel = waveform_stats[4]
-        analog_high_channel = waveform_stats[3]
+        samples_per_cycle = waveform_stats[2]
+        analog_low_channel = waveform_stats[5]
+        analog_high_channel = waveform_stats[4]
         if waveform_stats[5] == "Single":
             scan_options = ScanOption.SINGLEIO
     else:
@@ -264,46 +264,99 @@ def MCUSB_ao(waveform_stats):
     
     return
     
-# Here needs to be the support for multiple waveforms, this should be easily
-# adapted from Calvin's code as long as things are not too different semantically
+# This and digital should work, Needs tested on the RASPI
 def MCUSB_multi_ao(waveform1,waveform2,waveform_info):
     wave_info = []
     wave_info2 = []
-    file_name = None
-    file_name2 = None
     sample_rate = 0
     samples_per_channel = 0
     samples_per_cycle = 0
     analog_low_channel = 0
     analog_high_channel = 2
     scan_options = ScanOption.CONTINUOUS
+    # Here we will separate waves into their own lists, making the process for filling the buffer
+    # much easier. Additionally, the frequencies will be matched such that both waves are output
+    # continuously without any major jumps. This process has been minorly adapted from Calvin Nettelhorst's
+    # gui code for outputting dual waves.
     if waveform1 == "Custom":
         if waveform2 == "Custom":
-            print("Custom, Custom")
-            wave_info.append("Custom").append("")
+            # Both waveform are custom
+            wave_info.append("Custom").append(waveform_info[1])
+            wave_info2.append("Custom").append(waveform_info[4])
+            # Set Frequency
+            frequency_ch1 = float(waveform_info[2] * np.pi * 2)
+            frequency_ch2 = float(waveform_info[5] * np.pi * 2)
+            freq1_fraction = Fraction(frequency_ch1).limit_denominator()
+            freq2_fraction = Fraction(frequency_ch2).limit_denominator()
+            # Find the least common multiple of the denominators
+            lcm_denominator = np.lcm(freq1_fraction.denominator, freq2_fraction.denominator)
+            # Scale the fundamental period to achieve integer points for each wave
+            if frequency_ch1 >= frequency_ch2:
+                points_per_period_wave1 = int(sample_rate/frequency_ch1)
+                points_per_period_wave2 = int((freq1_fraction.denominator / freq2_fraction.denominator) * points_per_period_wave1)
+                list_length = np.lcm(points_per_period_wave1, points_per_period_wave2) * lcm_denominator
+                samples_per_channel = int(list_length*frequency_ch1)
+            else:
+                points_per_period_wave2 = int(sample_rate/frequency_ch2)
+                points_per_period_wave1 = int((freq2_fraction.denominator / freq1_fraction.denominator) * points_per_period_wave2)
+                list_length = np.lcm(points_per_period_wave2, points_per_period_wave1) * lcm_denominator
+                samples_per_channel = int(list_length*frequency_ch2)
         else:
-            print("Custom, Precoded")
-            return
+            # Wave 1 is custom, Wave 2 is a Preset
+            wave_info.append("Custom").append(waveform_info[1])
+            wave_info2 = wave_info[3:7]
+            # Set Frequency
+            frequency_ch1 = float(waveform_info[2] * np.pi * 2)
+            frequency_ch2 = float(waveform_info[4] * np.pi * 2)
+            freq1_fraction = Fraction(frequency_ch1).limit_denominator()
+            freq2_fraction = Fraction(frequency_ch2).limit_denominator()
+            # Find the least common multiple of the denominators
+            lcm_denominator = np.lcm(freq1_fraction.denominator, freq2_fraction.denominator)
+            # Scale the fundamental period to achieve integer points for each wave
+            if frequency_ch1 >= frequency_ch2:
+                points_per_period_wave1 = int(sample_rate/frequency_ch1)
+                points_per_period_wave2 = int((freq1_fraction.denominator / freq2_fraction.denominator) * points_per_period_wave1)
+                list_length = np.lcm(points_per_period_wave1, points_per_period_wave2) * lcm_denominator
+                samples_per_channel = int(list_length*frequency_ch1)
+            else:
+                points_per_period_wave2 = int(sample_rate/frequency_ch2)
+                points_per_period_wave1 = int((freq2_fraction.denominator / freq1_fraction.denominator) * points_per_period_wave2)
+                list_length = np.lcm(points_per_period_wave2, points_per_period_wave1) * lcm_denominator
+                samples_per_channel = int(list_length*frequency_ch2)
     else:
         if waveform2 == "Custom":
-            print("Precoded, Custom")
+            # Wave 1 is  a Preset, Wave 2 is Custom
             wave_info = waveform_info[0:4]
-            # Need a way to match frequencies in this case, may need to rework custom input
+            wave_info2.append("Custom").append(waveform_info[6])
+            # Set Frequency
+            frequency_ch1 = float(waveform_info[1] * np.pi * 2)
+            frequency_ch2 = float(waveform_info[7] * np.pi * 2)
+            freq1_fraction = Fraction(frequency_ch1).limit_denominator()
+            freq2_fraction = Fraction(frequency_ch2).limit_denominator()
+            # Find the least common multiple of the denominators
+            lcm_denominator = np.lcm(freq1_fraction.denominator, freq2_fraction.denominator)
+            # Scale the fundamental period to achieve integer points for each wave
+            if frequency_ch1 >= frequency_ch2:
+                points_per_period_wave1 = int(sample_rate/frequency_ch1)
+                points_per_period_wave2 = int((freq1_fraction.denominator / freq2_fraction.denominator) * points_per_period_wave1)
+                list_length = np.lcm(points_per_period_wave1, points_per_period_wave2) * lcm_denominator
+                samples_per_channel = int(list_length*frequency_ch1)
+            else:
+                points_per_period_wave2 = int(sample_rate/frequency_ch2)
+                points_per_period_wave1 = int((freq2_fraction.denominator / freq1_fraction.denominator) * points_per_period_wave2)
+                list_length = np.lcm(points_per_period_wave2, points_per_period_wave1) * lcm_denominator
+                samples_per_channel = int(list_length*frequency_ch2)
         else:
-            print("Precoded, Precoded")
-            # Adapted from Calvin's code
+            # Wave 1 and 2 are both Presets
             sample_rate = waveform_info[10]
             wave_info = waveform_info[0:4]
             wave_info2 = waveform_info[5:9]
-            frequency_ch1 = float(waveform_info[2] * np.pi * 2)
-            frequency_ch2 = float(waveform_info[7] * np.pi * 2)
-
+            frequency_ch1 = float(waveform_info[1] * np.pi * 2)
+            frequency_ch2 = float(waveform_info[6] * np.pi * 2)
             freq1_fraction = Fraction(frequency_ch1).limit_denominator()
             freq2_fraction = Fraction(frequency_ch2).limit_denominator()
-
             # Find the least common multiple of the denominators
             lcm_denominator = np.lcm(freq1_fraction.denominator, freq2_fraction.denominator)
-            
             # Scale the fundamental period to achieve integer points for each wave
             if frequency_ch1 >= frequency_ch2:
                 points_per_period_wave1 = int(sample_rate/frequency_ch1)
@@ -381,8 +434,274 @@ def MCUSB_multi_ao(waveform1,waveform2,waveform_info):
     return
 
 
+# The Digital Output functions are exactly that of the ao functions, except the role of the channels has been swapped
+# i.e. the analog_low_channel is not digital_low_port_index, functionally changing from analog to digital output
+def MCUSB_do(waveform_stats):
+    print("Forming wave!")
+    #Take waveform_stats useful info for generating data
+    wave_info = []
+    file_name = None
+    sample_rate = 0
+    samples_per_channel = 0
+    samples_per_cycle = 0
+    digital_low_port_index = 0
+    digital_high_port_index = 0
+    scan_options = ScanOption.CONTINUOUS
+    if waveform_stats[0] == 'Custom':
+        samples_per_channel = waveform_stats[2]
+        sample_rate = waveform_stats[3]
+        file_name = waveform_stats[1]
+        samples_per_cycle = waveform_stats[2]
+        digital_low_port_index = waveform_stats[5]
+        digital_high_port_index = waveform_stats[4]
+        if waveform_stats[5] == "Single":
+            scan_options = ScanOption.SINGLEIO
+    else:
+        wave_info = [waveform_stats[0],int(waveform_stats[1]),float(waveform_stats[2]),float(waveform_stats[3]),float(waveform_stats[4])]
+        sample_rate = int(waveform_stats[5])  # Hz
+        samples_per_channel = sample_rate * int(waveform_stats[1])
+        samples_per_cycle = int(sample_rate * int(wave_info[1]))
+        digital_low_port_index = int(waveform_stats[7])
+        digital_high_port_index = int(waveform_stats[6])
+        if waveform_stats[8] == "Single":
+            scan_options = ScanOption.SINGLEIO
+    channel_descriptors = []
+    scan_flags = DaqOutScanFlag.DEFAULT
+
+    # Parameters used when creating channel_descriptors list
+    analog_range_index = 0
+    analog_low_channel = 0
+    analog_high_channel = 0
+    
+    #-----------------------------------------------------
+    # Create the daq output object and verify that it is valid
+    daqo_device = DAQ.daq_device.get_daqo_device()
+    # Verify the specified DAQ device supports DAQ output.
+    if daqo_device is None:
+        raise Exception('Error: The DAQ device does not support DAQ output')
+
+    daqo_info = daqo_device.get_info()
     
     
+    descriptor = DAQ.daq_device.get_descriptor()
+    #print('\nConnecting to', descriptor.dev_string, '- please wait...')
+    
+    # Configure supported analog input and digital input channels
+    amplitudes = []
+    supported_channel_types = daqo_info.get_channel_types()
+    if DaqOutChanType.ANALOG in supported_channel_types:
+        configure_analog_channels(DAQ.daq_device, analog_low_channel, analog_high_channel,
+                                    analog_range_index, channel_descriptors, amplitudes)
+    if DaqOutChanType.DIGITAL in supported_channel_types:
+        configure_digital_channels(DAQ.daq_device, digital_low_port_index, digital_high_port_index,
+                                    channel_descriptors, amplitudes)
+
+    num_channels = len(channel_descriptors)
+
+    # Create a buffer for output data.
+    DAQ.out_buffer = create_float_buffer(num_channels, samples_per_channel)
+    # Fill the output buffer with data.
+    if waveform_stats[0] == 'Custom':
+        create_output_data_xsl(channel_descriptors, samples_per_channel, samples_per_cycle, amplitudes, DAQ.out_buffer, wave_info)
+    else:
+        create_output_data(channel_descriptors, samples_per_channel, samples_per_cycle, amplitudes, DAQ.out_buffer, wave_info)
+
+    print('\n', descriptor.dev_string, 'ready')
+    print('    Function demonstrated: DaqoDevice.daq_out_scan')
+    print('    Number of Scan Channels:', num_channels)
+    for chan in range(num_channels):
+        chan_descriptor = channel_descriptors[chan]  # type: DaqOutChanDescriptor
+        print('        Scan Channel', chan, end='')
+        print(': type =', DaqOutChanType(chan_descriptor.type).name, end='')
+        if chan_descriptor.type == DaqOutChanType.ANALOG:
+            print(', channel =', chan_descriptor.channel, end='')
+            print(', range =', Range(chan_descriptor.range).name, end='')
+        else:
+            print(', port =', DigitalPortType(chan_descriptor.channel).name, end='')
+        print('')
+    print('    Samples per channel:', samples_per_channel)
+    print('    Rate:', sample_rate, 'Hz')
+    print('    Scan options:', display_scan_options(scan_options))
+    #try:
+    #    input('\nHit ENTER to generate sin waves....')
+    #except (NameError, SyntaxError):
+    #    pass
+
+    #system('clear')
+    
+    # Start the output scan.
+    sample_rate = daqo_device.daq_out_scan(channel_descriptors, samples_per_channel, sample_rate,
+                                            scan_options, scan_flags, DAQ.out_buffer)
+    
+    #print('\n*Press Ctrl-C to stop scan')
+    print('\n  AO on:  Actual scan rate:   ', sample_rate, 'Hz')
+    
+    return
+    
+def MCUSB_multi_do(waveform1,waveform2,waveform_info):
+    wave_info = []
+    wave_info2 = []
+    sample_rate = 0
+    samples_per_channel = 0
+    samples_per_cycle = 0
+    digital_low_port_index = 0
+    digital_high_port_index = 2 # Need to grab from the actual functions
+    scan_options = ScanOption.CONTINUOUS
+    if waveform1 == "Custom":
+        if waveform2 == "Custom":
+            # Both waveform are custom
+            wave_info.append("Custom").append(waveform_info[1])
+            wave_info2.append("Custom").append(waveform_info[4])
+            # Set Frequency
+            frequency_ch1 = float(waveform_info[2] * np.pi * 2)
+            frequency_ch2 = float(waveform_info[5] * np.pi * 2)
+            freq1_fraction = Fraction(frequency_ch1).limit_denominator()
+            freq2_fraction = Fraction(frequency_ch2).limit_denominator()
+            # Find the least common multiple of the denominators
+            lcm_denominator = np.lcm(freq1_fraction.denominator, freq2_fraction.denominator)
+            # Scale the fundamental period to achieve integer points for each wave
+            if frequency_ch1 >= frequency_ch2:
+                points_per_period_wave1 = int(sample_rate/frequency_ch1)
+                points_per_period_wave2 = int((freq1_fraction.denominator / freq2_fraction.denominator) * points_per_period_wave1)
+                list_length = np.lcm(points_per_period_wave1, points_per_period_wave2) * lcm_denominator
+                samples_per_channel = int(list_length*frequency_ch1)
+            else:
+                points_per_period_wave2 = int(sample_rate/frequency_ch2)
+                points_per_period_wave1 = int((freq2_fraction.denominator / freq1_fraction.denominator) * points_per_period_wave2)
+                list_length = np.lcm(points_per_period_wave2, points_per_period_wave1) * lcm_denominator
+                samples_per_channel = int(list_length*frequency_ch2)
+        else:
+            # Wave 1 is custom, Wave 2 is a Preset
+            wave_info.append("Custom").append(waveform_info[1])
+            wave_info2 = wave_info[3:7]
+            # Set Frequency
+            frequency_ch1 = float(waveform_info[2] * np.pi * 2)
+            frequency_ch2 = float(waveform_info[4] * np.pi * 2)
+            freq1_fraction = Fraction(frequency_ch1).limit_denominator()
+            freq2_fraction = Fraction(frequency_ch2).limit_denominator()
+            # Find the least common multiple of the denominators
+            lcm_denominator = np.lcm(freq1_fraction.denominator, freq2_fraction.denominator)
+            # Scale the fundamental period to achieve integer points for each wave
+            if frequency_ch1 >= frequency_ch2:
+                points_per_period_wave1 = int(sample_rate/frequency_ch1)
+                points_per_period_wave2 = int((freq1_fraction.denominator / freq2_fraction.denominator) * points_per_period_wave1)
+                list_length = np.lcm(points_per_period_wave1, points_per_period_wave2) * lcm_denominator
+                samples_per_channel = int(list_length*frequency_ch1)
+            else:
+                points_per_period_wave2 = int(sample_rate/frequency_ch2)
+                points_per_period_wave1 = int((freq2_fraction.denominator / freq1_fraction.denominator) * points_per_period_wave2)
+                list_length = np.lcm(points_per_period_wave2, points_per_period_wave1) * lcm_denominator
+                samples_per_channel = int(list_length*frequency_ch2)
+    else:
+        if waveform2 == "Custom":
+            # Wave 1 is  a Preset, Wave 2 is Custom
+            wave_info = waveform_info[0:4]
+            wave_info2.append("Custom").append(waveform_info[6])
+            # Set Frequency
+            frequency_ch1 = float(waveform_info[1] * np.pi * 2)
+            frequency_ch2 = float(waveform_info[7] * np.pi * 2)
+            freq1_fraction = Fraction(frequency_ch1).limit_denominator()
+            freq2_fraction = Fraction(frequency_ch2).limit_denominator()
+            # Find the least common multiple of the denominators
+            lcm_denominator = np.lcm(freq1_fraction.denominator, freq2_fraction.denominator)
+            # Scale the fundamental period to achieve integer points for each wave
+            if frequency_ch1 >= frequency_ch2:
+                points_per_period_wave1 = int(sample_rate/frequency_ch1)
+                points_per_period_wave2 = int((freq1_fraction.denominator / freq2_fraction.denominator) * points_per_period_wave1)
+                list_length = np.lcm(points_per_period_wave1, points_per_period_wave2) * lcm_denominator
+                samples_per_channel = int(list_length*frequency_ch1)
+            else:
+                points_per_period_wave2 = int(sample_rate/frequency_ch2)
+                points_per_period_wave1 = int((freq2_fraction.denominator / freq1_fraction.denominator) * points_per_period_wave2)
+                list_length = np.lcm(points_per_period_wave2, points_per_period_wave1) * lcm_denominator
+                samples_per_channel = int(list_length*frequency_ch2)
+        else:
+            # Wave 1 and 2 are both Presets
+            sample_rate = waveform_info[10]
+            wave_info = waveform_info[0:4]
+            wave_info2 = waveform_info[5:9]
+            frequency_ch1 = float(waveform_info[1] * np.pi * 2)
+            frequency_ch2 = float(waveform_info[6] * np.pi * 2)
+            freq1_fraction = Fraction(frequency_ch1).limit_denominator()
+            freq2_fraction = Fraction(frequency_ch2).limit_denominator()
+            # Find the least common multiple of the denominators
+            lcm_denominator = np.lcm(freq1_fraction.denominator, freq2_fraction.denominator)
+            # Scale the fundamental period to achieve integer points for each wave
+            if frequency_ch1 >= frequency_ch2:
+                points_per_period_wave1 = int(sample_rate/frequency_ch1)
+                points_per_period_wave2 = int((freq1_fraction.denominator / freq2_fraction.denominator) * points_per_period_wave1)
+                list_length = np.lcm(points_per_period_wave1, points_per_period_wave2) * lcm_denominator
+                samples_per_channel = int(list_length*frequency_ch1)
+            else:
+                points_per_period_wave2 = int(sample_rate/frequency_ch2)
+                points_per_period_wave1 = int((freq2_fraction.denominator / freq1_fraction.denominator) * points_per_period_wave2)
+                list_length = np.lcm(points_per_period_wave2, points_per_period_wave1) * lcm_denominator
+                samples_per_channel = int(list_length*frequency_ch2)
+            if wave_info[13] == "Single":
+                scan_options = ScanOption.SINGLEIO
+            samples_per_cycle = samples_per_channel * 2
+    channel_descriptors = []
+    scan_flags = DaqOutScanFlag.DEFAULT
+
+    # Parameters used when creating channel_descriptors list
+    analog_range_index = 0
+    analog_low_channel = 0
+    analog_high_channel = 0
+    
+    #-----------------------------------------------------
+    # Create the daq output object and verify that it is valid
+    daqo_device = DAQ.daq_device.get_daqo_device()
+    # Verify the specified DAQ device supports DAQ output.
+    if daqo_device is None:
+        raise Exception('Error: The DAQ device does not support DAQ output')
+
+    daqo_info = daqo_device.get_info()
+    
+    
+    descriptor = DAQ.daq_device.get_descriptor()
+    #print('\nConnecting to', descriptor.dev_string, '- please wait...')
+    
+    # Configure supported analog input and digital input channels
+    amplitudes = []
+    supported_channel_types = daqo_info.get_channel_types()
+    if DaqOutChanType.ANALOG in supported_channel_types:
+        configure_analog_channels(DAQ.daq_device, analog_low_channel, analog_high_channel,
+                                    analog_range_index, channel_descriptors, amplitudes)
+    if DaqOutChanType.DIGITAL in supported_channel_types:
+        configure_digital_channels(DAQ.daq_device, digital_low_port_index, digital_high_port_index,
+                                    channel_descriptors, amplitudes)
+
+    num_channels = len(channel_descriptors)
+    # Create a buffer for output data.
+    DAQ.out_buffer = create_float_buffer(num_channels, samples_per_channel)
+
+    # Fill the buffer with data
+    create_output_data_multi(channel_descriptors, samples_per_channel, samples_per_cycle, amplitudes, DAQ.out_buffer, wave_info, wave_info2)
+
+    print('\n', descriptor.dev_string, 'ready')
+    print('    Function demonstrated: DaqoDevice.daq_out_scan')
+    print('    Number of Scan Channels:', num_channels)
+    for chan in range(num_channels):
+        chan_descriptor = channel_descriptors[chan]  # type: DaqOutChanDescriptor
+        print('        Scan Channel', chan, end='')
+        print(': type =', DaqOutChanType(chan_descriptor.type).name, end='')
+        if chan_descriptor.type == DaqOutChanType.ANALOG:
+            print(', channel =', chan_descriptor.channel, end='')
+            print(', range =', Range(chan_descriptor.range).name, end='')
+        else:
+            print(', port =', DigitalPortType(chan_descriptor.channel).name, end='')
+        print('')
+    print('    Samples per channel:', samples_per_channel)
+    print('    Rate:', sample_rate, 'Hz')
+    print('    Scan options:', display_scan_options(scan_options))
+    
+    sample_rate = daqo_device.daq_out_scan(channel_descriptors, samples_per_channel, sample_rate,
+                                            scan_options, scan_flags, DAQ.out_buffer)
+    
+    print('\n  AO on:  Actual scan rate:   ', sample_rate, 'Hz')
+    
+    return
+
 def MCUSB_stop_ao():
     daqo_device = DAQ.daq_device.get_daqo_device()
     daqo_device.scan_stop()
@@ -457,7 +776,6 @@ def configure_digital_channels(daq_device, low_port_index, high_port_index, chan
 
 
 def create_output_data(channel_descriptors, samples_per_channel, samples_per_cycle, amplitudes, data_buffer, wave):
-    """Populate the buffer with sine wave data."""
     shape = wave[0].strip()
     frequency = wave[1] * 2 * np.pi
     shift = wave[2]
@@ -479,7 +797,7 @@ def create_output_data(channel_descriptors, samples_per_channel, samples_per_cyc
             if chan.type == DaqOutChanType.ANALOG:
                 data_buffer[i] = val + offset
             else:
-                data_buffer[i] = round(amplitudes[1] * val)
+                data_buffer[i] = round(val + offset)
             i += 1
             if i >= len(data_buffer):
                 return
@@ -515,28 +833,27 @@ def create_output_data_multi(channel_descriptors, samples_per_channel, samples_p
         book = load_workbook(file_name)
         sheet = book.active
         check = True
-        for letter in list(string.ascii_uppercase):
-            i = 1
-            while check:
-                cell = letter + str(i)
-                val = sheet[cell].value
-                if val is None:
-                    check = False
-                    print('last cell placed is ',i-1)
-                else:
-                    if val > 10 or val < -10:
-                        val = 0
-                    data_buffer[i - 1] = float(val)
-                    print(data_buffer[i-1])
-                    i += 1
-                if i - 1 >= len(data_buffer):
-                    print('Data input too long! Trimming input data to cell ',i)
+        i = 1
+        j = 0
+        while check:
+            cell = 'A' + str(i)
+            val = sheet[cell].value
+            if val is None:
+                i = 1
+            else:
+                if val > 10 or val < -10:
+                    val = 0
+                data1.append(float(val))
+                i += 1
+                j += 1
+            if j >= len(data_buffer) / 2:
+                print('Data input too long! Trimming input data to cell ',i)
+                check = False
     else:
         frequency1 = wave1[1] * 2 * np.pi
         shift1 = wave1[2]
         amplitude1 = wave1[3]
         offset1 = wave1[4]
-        cycles_per_buffer = int(samples_per_channel / samples_per_cycle)
         i = 0
         for sample in range(samples_per_channel):
             for chan in channel_descriptors:
@@ -552,7 +869,7 @@ def create_output_data_multi(channel_descriptors, samples_per_channel, samples_p
                 if chan.type == DaqOutChanType.ANALOG:
                     data1.append(val + offset1)
                 else:
-                    data1.append(round(amplitudes[1] * val))
+                    data1.append(round(val + offset1))
                 i += 1
                 if i >= len(data_buffer) / 2:
                     break
@@ -562,29 +879,28 @@ def create_output_data_multi(channel_descriptors, samples_per_channel, samples_p
         book = load_workbook(file_name)
         sheet = book.active
         check = True
-        for letter in list(string.ascii_uppercase):
-            i = 1
-            while check:
-                cell = letter + str(i)
-                val = sheet[cell].value
-                if val is None:
-                    check = False
-                    print('last cell placed is ',i-1)
-                else:
-                    if val > 10 or val < -10:
-                        val = 0
-                    data_buffer[i - 1] = float(val)
-                    print(data_buffer[i-1])
-                    i += 1
-                if i - 1 >= len(data_buffer):
-                    print('Data input too long! Trimming input data to cell ',i)
+        i = 1
+        j = 0
+        while check:
+            cell = 'B' + str(i)
+            val = sheet[cell].value
+            if val is None:
+                i = 1
+            else:
+                if val > 10 or val < -10:
+                    val = 0
+                data2.append(float(val))
+                i += 1
+                j += 1
+            if j >= len(data_buffer) / 2:
+                print('Data input too long! Trimming input data to cell ',i)
+                check = False
     else:
         frequency2 = wave2[1] * 2 * np.pi
         shift2 = wave2[2]
         amplitude2 = wave2[3]
         offset2 = wave2[4]
         i = 0
-        cycles_per_buffer = int(samples_per_channel / samples_per_cycle)
         for sample in range(samples_per_channel):
             for chan in channel_descriptors:
                 val = 0
@@ -599,7 +915,7 @@ def create_output_data_multi(channel_descriptors, samples_per_channel, samples_p
                 if chan.type == DaqOutChanType.ANALOG:
                     data2.append(val + offset2)
                 else:
-                    data2.append(round(amplitudes[1] * val))
+                    data2.append(round(val + offset2))
                 i += 1
                 if i >= len(data_buffer) / 2:
                     break
@@ -612,8 +928,6 @@ def MCUSB_acquire(high_channel,low_channel):
     DAQ.high_channel = high_channel
     DAQ.low_channel = low_channel
     ai_device = DAQ.ai_device
-    daq_device = DAQ.daq_device
-    ai_info = DAQ.ai_device.get_info()
     samples_per_channel = DAQ.samples_per_channel
     channel_count = high_channel-low_channel+1
     input_mode = DAQ.input_mode
@@ -622,52 +936,23 @@ def MCUSB_acquire(high_channel,low_channel):
     scan_options = DAQ.scan_options
     ranges = DAQ.ranges
     range_index = DAQ.range_index
+    DAQ.buffer_store = create_float_buffer(channel_count,samples_per_channel)
 
     DAQ.f_out = h5py.File(DAQ.OUTPUT_FILENAME, 'w', libver='latest')
-    #arr = np.array([[0,1,2,3,4,5,6,7]], dtype='f2')
     arr = np.array([np.zeros(channel_count)], dtype='f2')
-    #DAQ.dset = DAQ.f_out.create_dataset("events", chunks=(2000,8), maxshape=(None,None), data=arr)
     DAQ.dset = DAQ.f_out.create_dataset("events", chunks=(DAQ.buffer_store,channel_count), maxshape=(None,None), data=arr, compression="gzip", compression_opts=9)
-    #DAQ.dset = DAQ.f_out.create_dataset("events", chunks=(2000,n_channels), dtype='f2', compression="gzip", compression_opts=9)
     DAQ.f_out.swmr_mode = True
-    
-    try:
-        #os.system('clear')
-        print('MCUSB_acquire--> commence data aquisition...')
 
+    try:
+        print('MCUSB_acquire--> commence data aquisition...')
         # Start the acquisition.
-        #start_time = str(datetime.now())
         DAQ.rate = ai_device.a_in_scan(low_channel, high_channel, input_mode, ranges[range_index], samples_per_channel, rate, scan_options, flags, DAQ.data)
-    
-        # Wait here until the scan is done ... events will be handled in the event handler
-        # (eventCallbackFunction) until the background scan completes
-        
-        #raw_input() #python2
-        #input()      # user input, python3, wait here
-        #end_time = str(datetime.now())
-        
-        #print('start_time: ',start_time)
-        #print('end_time: ',end_time)
-    
     except KeyboardInterrupt:
         pass
     except (ValueError, NameError, SyntaxError):
         pass
     except Exception as e:
         print('\n', e)
-    #except LunchError:
-    #    pass
-    #finally:
-    #    if daq_device:
-            # Stop the acquisition if it is still running.
-    #        if ai_device and ai_info and ai_info.has_pacer():
-    #            ai_device.scan_stop()
-            # daq_device.disable_event(DAQ.event_types)
-            # if daq_device.is_connected():
-                # daq_device.disconnect()
-            # daq_device.release()    
-    
-    #MCUSB_ao()
     
     return
 
@@ -835,6 +1120,31 @@ while True:
             socket.send(b"Reply: Forming %s wave!" % waveform_data[1].encode())
             waveform_data.pop(0)
             MCUSB_ao(waveform_data)
+        elif waveform_data[0] == 'Digital':
+            waveform_data.pop(0)
+            if waveform_data[0] == 'True':
+                waveform_data.pop(0)
+                if waveform_data[0] == 'Custom':
+                    if waveform_data[2] == 'Custom':
+                        # Both are custom
+                        socket.send(b"Reply: Forming two custom waves.")
+                        MCUSB_multi_do("Custom","Custom",waveform_data)
+                    else:
+                        # Only the first is custom
+                        socket.send(b"Reply: Forming a custom and %s wave" % waveform_data[2].encode())
+                        MCUSB_multi_do("Custom",waveform_data[2],waveform_data)
+                elif waveform_data[5] == 'Custom':
+                    # Only the second is custom
+                    socket.send(b"Reply: Forming a %s and a custom wave" % waveform_data[0].encode())
+                    MCUSB_multi_do(waveform_data[0],"Custom",waveform_data)
+                else:
+                    # Both are precoded
+                    socket.send(b"Reply: Forming a %s and a %s wave" % (waveform_data[0].encode(), waveform_data[5].encode()))
+                    MCUSB_multi_do(waveform_data[0],waveform_data[5],waveform_data)
+            elif waveform_data[0] == 'False':
+                socket.send(b"Reply: Forming %s wave!" % waveform_data[1].encode())
+                waveform_data.pop(0)
+                MCUSB_do(waveform_data)
         elif type(waveform_data[0]) == str and waveform_data[0][0:7] == 'Acquire':
             socket.send(b"Reply: MCUSB starts acquisition")
             file_no = waveform_data[0].strip('Acquire')
