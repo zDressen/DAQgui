@@ -2,13 +2,6 @@ Hello! Welcome to the DAQ software.
 
 WARNING: This software is incomplete and currently under development!
 
-TIPS:
-
-In the terminal, the client will output when a request is sent and when it receives a reply.
-This can be used as a sanity check to ensure the program is running correctly.
-
-Make sure the box being used supports analog and digital output.
-
 USING PRECODED OUTPUT:
 This program supports some precoded wave functionality. To utilize this functionality, enter the
 data into the labeled sections in the Analog or Digital channels. Then, begin data acquisition.
@@ -35,8 +28,32 @@ or digital configuration tab. Then, new boxes should appear under each section t
 new wave. Adjust this data as before. Then, generate the wave as before.
 
 
+RASPI USAGE:
+This is a python program system. You must install all of the necessary packages. When installing
+the correct packages you may find you need to use a Python Virtual Environment (during development I used
+venv). Afterwards, you must run both the server and the GUI at the same time
+from two different terminals.
+
+For simplicity, use the following link to github and follow the Linux Installation instructions
+for the uldaq library: https://github.com/mccdaq/uldaq
+
+WINDOWS USAGE:
+To use this software on a windows device you must use a Linux Virtual Machine.
+
+Using a Linux VM is almost the same as using a RasPi. The only difference is that you may need to
+share access to the USB port with the VM first. This can be done from a Windows Powershell Terminal. First,
+install the usbipd package. Then run the following commands, replacing #-# with the respective BUSID the 
+MCCUSB device is attached to. A list will be given from the first command.
+$ usbipd list
+$ usbipd bind --busid #-#
+$ usbipd attach --wsl --busid #-#
+After running these commands, the Linux VM should be able to access the USB Device and function as normal.
+
+
 
 
 
 TO BE DONE:
 -Input display vs Output Display?
+-Repair Digital Output
+-Multiple Input
