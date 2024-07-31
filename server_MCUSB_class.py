@@ -223,7 +223,6 @@ def MCUSB_ao(waveform_stats):
                                     channel_descriptors, amplitudes)
 
     num_channels = len(channel_descriptors)
-
     # Create a buffer for output data.
     DAQ.out_buffer = create_float_buffer(num_channels, samples_per_channel)
     # Fill the output buffer with data.
@@ -348,8 +347,8 @@ def MCUSB_multi_ao(waveform1,waveform2,waveform_info):
         else:
             # Wave 1 and 2 are both Presets
             sample_rate = int(waveform_info[10])
-            wave_info = waveform_info[0:4]
-            wave_info2 = waveform_info[5:9]
+            wave_info = waveform_info[0:5]
+            wave_info2 = waveform_info[5:10]
             frequency_ch1 = float(float(waveform_info[1]) * np.pi * 2)
             frequency_ch2 = float(float(waveform_info[6]) * np.pi * 2)
             freq1_fraction = Fraction(frequency_ch1).limit_denominator()
@@ -402,6 +401,9 @@ def MCUSB_multi_ao(waveform1,waveform2,waveform_info):
                                     channel_descriptors, amplitudes)
 
     num_channels = len(channel_descriptors)
+    print(num_channels)
+    print(samples_per_channel)
+    print(num_channels * samples_per_channel)
     # Create a buffer for output data.
     DAQ.out_buffer = create_float_buffer(num_channels, samples_per_channel)
 
@@ -849,29 +851,25 @@ def create_output_data_multi(channel_descriptors, samples_per_channel, samples_p
                 print('Data input too long! Trimming input data to cell ',i)
                 check = False
     else:
-        frequency1 = wave1[1] * 2 * np.pi
-        shift1 = wave1[2]
-        amplitude1 = wave1[3]
-        offset1 = wave1[4]
+        frequency1 = float(wave1[1]) * 2 * np.pi
+        shift1 = float(wave1[2])
+        amplitude1 = float(wave1[3])
+        offset1 = float(wave1[4])
         i = 0
         for sample in range(samples_per_channel):
-            for chan in channel_descriptors:
-                val = 0
-                if shape1 == 'Pulse':
-                    val = sin(2 * pi * sample / samples_per_cycle*10)*(1-sample/samples_per_cycle)
-                elif shape1 == 'Square':
-                    val = amplitude1 * square(frequency1 * sample / samples_per_cycle + shift1)
-                elif shape1 == 'Sawtooth':
-                    val = amplitude1 * sawtooth(frequency1 * sample / samples_per_cycle + shift1)
-                elif shape1 == 'Sine':
-                    val = amplitude1 * sin(frequency1 * sample / samples_per_cycle + shift1)
-                if chan.type == DaqOutChanType.ANALOG:
-                    data1.append(val + offset1)
-                else:
-                    data1.append(round(val + offset1))
-                i += 1
-                if i >= len(data_buffer) / 2:
-                    break
+            val = 0
+            if shape1 == 'Pulse':
+                val = sin(2 * pi * sample / samples_per_cycle*10)*(1-sample/samples_per_cycle)
+            elif shape1 == 'Square':
+                val = amplitude1 * square(frequency1 * sample / samples_per_cycle + shift1)
+            elif shape1 == 'Sawtooth':
+                val = amplitude1 * sawtooth(frequency1 * sample / samples_per_cycle + shift1)
+            elif shape1 == 'Sine':
+                val = amplitude1 * sin(frequency1 * sample / samples_per_cycle + shift1)
+            data1.append(val + offset1)
+            i += 1
+            if i >= len(data_buffer) / 3:
+                break
     shape2 = wave2[0].strip()
     if shape2 == "Custom":
         file_name = wave2[1]
@@ -891,37 +889,36 @@ def create_output_data_multi(channel_descriptors, samples_per_channel, samples_p
                 data2.append(float(val))
                 i += 1
                 j += 1
-            if j >= len(data_buffer) / 2:
+            if j >= len(data_buffer) / 3:
                 print('Data input too long! Trimming input data to cell ',i)
                 check = False
     else:
-        frequency2 = wave2[1] * 2 * np.pi
-        shift2 = wave2[2]
-        amplitude2 = wave2[3]
-        offset2 = wave2[4]
+        frequency2 = float(wave2[1]) * 2 * np.pi
+        shift2 = float(wave2[2])
+        amplitude2 = float(wave2[3])
+        offset2 = float(wave2[4])
         i = 0
         for sample in range(samples_per_channel):
-            for chan in channel_descriptors:
-                val = 0
-                if shape2 == 'Pulse':
-                    val = sin(2 * pi * sample / samples_per_cycle*10)*(1-sample/samples_per_cycle)
-                elif shape2 == 'Square':
-                    val = amplitude2 * square(frequency2 * sample / samples_per_cycle + shift2)
-                elif shape2 == 'Sawtooth':
-                    val = amplitude2 * sawtooth(frequency2 * sample / samples_per_cycle + shift2)
-                elif shape2 == 'Sine':
-                    val = amplitude2 * sin(frequency2 * sample / samples_per_cycle + shift2)
-                if chan.type == DaqOutChanType.ANALOG:
-                    data2.append(val + offset2)
-                else:
-                    data2.append(round(val + offset2))
-                i += 1
-                if i >= len(data_buffer) / 2:
-                    break
+            val = 0
+            if shape2 == 'Pulse':
+                val = sin(2 * pi * sample / samples_per_cycle*10)*(1-sample/samples_per_cycle)
+            elif shape2 == 'Square':
+                val = amplitude2 * square(frequency2 * sample / samples_per_cycle + shift2)
+            elif shape2 == 'Sawtooth':
+                val = amplitude2 * sawtooth(frequency2 * sample / samples_per_cycle + shift2)
+            elif shape2 == 'Sine':
+                val = amplitude2 * sin(frequency2 * sample / samples_per_cycle + shift2)
+            data2.append(val + offset2)
+            print(val)
+            i += 1
+            if i >= len(data_buffer) / 3:
+                break
     data_store = []
     for i in range(len(data1)):
-        data_buffer[2*i] = data1[i]
-        data_store[2*i+1] = data2[i]
+        data_buffer[3*i] = data1[i]
+        data_buffer[3*i+1] = data2[i]
+        data_buffer[3*i+2] = 0
+    print("data generated!")
     return
     
 def MCUSB_acquire(high_channel,low_channel):
