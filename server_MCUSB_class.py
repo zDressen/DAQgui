@@ -51,7 +51,7 @@ class MCUSBClass:
 
     # Single ended vs differential input
     input_mode = AiInputMode.SINGLE_ENDED #Box uses AC coupling or sumn
-    #input_mode= AiInputMode.DIFFERENTIAL
+    # input_mode= AiInputMode.DIFFERENTIAL
     
     event_types = DaqEventType.ON_DATA_AVAILABLE | DaqEventType.ON_END_OF_INPUT_SCAN | DaqEventType.ON_INPUT_SCAN_ERROR
     
@@ -264,7 +264,6 @@ def MCUSB_ao(waveform_stats):
     
     return
     
-# This and digital should work, Needs tested on the RASPI
 def MCUSB_multi_ao(waveform1,waveform2,waveform_info):
     wave_info = []
     wave_info2 = []
@@ -272,7 +271,7 @@ def MCUSB_multi_ao(waveform1,waveform2,waveform_info):
     samples_per_channel = 0
     samples_per_cycle = 0
     analog_low_channel = 0
-    analog_high_channel = 2
+    analog_high_channel = 1
     scan_options = ScanOption.CONTINUOUS
     # Here we will separate waves into their own lists, making the process for filling the buffer
     # much easier. Additionally, the frequencies will be matched such that both waves are output
@@ -304,7 +303,7 @@ def MCUSB_multi_ao(waveform1,waveform2,waveform_info):
         else:
             # Wave 1 is custom, Wave 2 is a Preset
             wave_info.append("Custom").append(waveform_info[1])
-            wave_info2 = wave_info[3:7]
+            wave_info2 = waveform_info[3:7]
             # Set Frequency
             frequency_ch1 = float(waveform_info[2] * np.pi * 2)
             frequency_ch2 = float(waveform_info[4] * np.pi * 2)
@@ -329,8 +328,8 @@ def MCUSB_multi_ao(waveform1,waveform2,waveform_info):
             wave_info = waveform_info[0:4]
             wave_info2.append("Custom").append(waveform_info[6])
             # Set Frequency
-            frequency_ch1 = float(waveform_info[1] * np.pi * 2)
-            frequency_ch2 = float(waveform_info[7] * np.pi * 2)
+            frequency_ch1 = float(float(waveform_info[1]) * np.pi * 2)
+            frequency_ch2 = float(float(waveform_info[7]) * np.pi * 2)
             freq1_fraction = Fraction(frequency_ch1).limit_denominator()
             freq2_fraction = Fraction(frequency_ch2).limit_denominator()
             # Find the least common multiple of the denominators
@@ -348,11 +347,11 @@ def MCUSB_multi_ao(waveform1,waveform2,waveform_info):
                 samples_per_channel = int(list_length*frequency_ch2)
         else:
             # Wave 1 and 2 are both Presets
-            sample_rate = waveform_info[10]
+            sample_rate = int(waveform_info[10])
             wave_info = waveform_info[0:4]
             wave_info2 = waveform_info[5:9]
-            frequency_ch1 = float(waveform_info[1] * np.pi * 2)
-            frequency_ch2 = float(waveform_info[6] * np.pi * 2)
+            frequency_ch1 = float(float(waveform_info[1]) * np.pi * 2)
+            frequency_ch2 = float(float(waveform_info[6]) * np.pi * 2)
             freq1_fraction = Fraction(frequency_ch1).limit_denominator()
             freq2_fraction = Fraction(frequency_ch2).limit_denominator()
             # Find the least common multiple of the denominators
@@ -368,7 +367,7 @@ def MCUSB_multi_ao(waveform1,waveform2,waveform_info):
                 points_per_period_wave1 = int((freq2_fraction.denominator / freq1_fraction.denominator) * points_per_period_wave2)
                 list_length = np.lcm(points_per_period_wave2, points_per_period_wave1) * lcm_denominator
                 samples_per_channel = int(list_length*frequency_ch2)
-            if wave_info[13] == "Single":
+            if waveform_info[13] == "Single":
                 scan_options = ScanOption.SINGLEIO
             samples_per_cycle = samples_per_channel * 2
     channel_descriptors = []
@@ -434,8 +433,8 @@ def MCUSB_multi_ao(waveform1,waveform2,waveform_info):
     return
 
 
-# The Digital Output functions are exactly that of the ao functions, except the role of the channels has been swapped
-# i.e. the analog_low_channel is not digital_low_port_index, functionally changing from analog to digital output
+# The Digital Output function only switches between a "high" and a "low". Need to work on
+# this functionality.
 def MCUSB_do(waveform_stats):
     print("Forming wave!")
     #Take waveform_stats useful info for generating data
@@ -461,8 +460,8 @@ def MCUSB_do(waveform_stats):
         sample_rate = int(waveform_stats[5])  # Hz
         samples_per_channel = sample_rate * int(waveform_stats[1])
         samples_per_cycle = int(sample_rate * int(wave_info[1]))
-        digital_low_port_index = int(waveform_stats[7])
-        digital_high_port_index = int(waveform_stats[6])
+        digital_low_port_index = int(waveform_stats[8])
+        digital_high_port_index = int(waveform_stats[7])
         if waveform_stats[8] == "Single":
             scan_options = ScanOption.SINGLEIO
     channel_descriptors = []
@@ -919,9 +918,10 @@ def create_output_data_multi(channel_descriptors, samples_per_channel, samples_p
                 i += 1
                 if i >= len(data_buffer) / 2:
                     break
+    data_store = []
     for i in range(len(data1)):
-        data_buffer.append(data1[i])
-        data_buffer.append(data2[i])
+        data_buffer[2*i] = data1[i]
+        data_store[2*i+1] = data2[i]
     return
     
 def MCUSB_acquire(high_channel,low_channel):
@@ -936,7 +936,6 @@ def MCUSB_acquire(high_channel,low_channel):
     scan_options = DAQ.scan_options
     ranges = DAQ.ranges
     range_index = DAQ.range_index
-    DAQ.buffer_store = create_float_buffer(channel_count,samples_per_channel)
 
     DAQ.f_out = h5py.File(DAQ.OUTPUT_FILENAME, 'w', libver='latest')
     arr = np.array([np.zeros(channel_count)], dtype='f2')

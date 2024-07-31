@@ -32,7 +32,7 @@ wave_shift2 = 0
 wave_amplitude2 = 1
 custom_file2 = None
 multiple_wave_types = False
-active__analog_channels = []
+active_analog_channels = []
 
 # Digital Wave Variables
 digital_waveform = 'Square'
@@ -41,7 +41,7 @@ digital_wave_frequency = 10
 digital_wave_shift = 0
 digital_wave_amplitude = 1
 digital_custom_file = None
-digital_wave_io_type = 'Single'
+digital_wave_io_type = 'Continuous'
 digital_waveform2 = 'Square'
 digital_wave_offset2 = 0
 digital_wave_frequency2 = 10
@@ -50,6 +50,9 @@ digital_wave_amplitude2 = 1
 digital_custom_file2 = None
 digital_multiple_wave_types = False
 active_digital_channels = []
+
+sample_rate = 1000
+t_buffer = None
 
 class CheckableComboBox(QComboBox):
     def __init__(self, parent=None):
@@ -179,7 +182,6 @@ class AnalogConfigTab (QWidget) :
             layout.addWidget(self.waveform_amplitude_textline2,11,1)
             layout.addWidget(self.waveform_shift_textline2,13,1)
             layout.addWidget(self.waveform_y_textline2,15,1)
-            layout.addWidget(self.type_output_box2,17,1)
             multiple_wave_types = True
             self.waveform_type_box2.activated.connect(self.UpdateWaveform2)
             self.waveform_frequency_textline2.textChanged.connect(self.UpdateWaveformFreq)
@@ -280,45 +282,12 @@ class DigitalConfigTab (QWidget):
     channel_3_output = QCheckBox('Output?')
     channel_submit = QPushButton('Submit Channel Options')
     #Waveform Options of Tab
-    waveform_section_label = QLabel("Output Options")
-    waveform_type_label = QLabel("Wave Type")
-    waveform_type_box = QComboBox()
-    waveform_type_box2 = QComboBox()
     waveform_frequency_label = QLabel("Frequency (Hz):")
     waveform_frequency_textline = QLineEdit('10')
-    waveform_frequency_textline2 = QLineEdit('10')
-    waveform_shift_label = QLabel("Phase Shift (Radians):")
-    waveform_shift_textline = QLineEdit('0')
-    waveform_shift_textline2 = QLineEdit('0')
-    waveform_amplitude_label = QLabel("Amplitude (V):")
-    waveform_amplitude_textline = QLineEdit('1')
-    waveform_amplitude_textline2 = QLineEdit('1')
-    custom_file_label = QLabel("If using a file input, please type it below:")
-    custom_file_textline = QLineEdit('YourFileName.xlsx')
-    custom_file_textline2 = QLineEdit('YourFileName.xlsx')
-    waveform_y_label = QLabel("Y-Offset (V)")
-    waveform_y_textline = QLineEdit('0')
-    waveform_y_textline2 = QLineEdit('0')
-    channel_update_button = QPushButton('Channel List Refresh')
-    type_output_label = QLabel('Type of Output:')
-    type_output_box = QComboBox()
-    multiple_waves = QCheckBox('Multiple Waveforms?')
     
     layout = None
     
     #Initialization of Dropdown Menus
-    waveform_type_box.addItem("Square")
-    waveform_type_box.addItem("Pulse")
-    waveform_type_box.addItem("Sawtooth")
-    waveform_type_box.addItem("Sine")
-    waveform_type_box.addItem("Custom")
-    waveform_type_box2.addItem("Square")
-    waveform_type_box2.addItem("Pulse")
-    waveform_type_box2.addItem("Sawtooth")
-    waveform_type_box2.addItem("Sine")
-    waveform_type_box2.addItem("Custom")
-    type_output_box.addItem('Single')
-    type_output_box.addItem('Continuous')
     
     def __init__(self):
         super().__init__()
@@ -344,29 +313,12 @@ class DigitalConfigTab (QWidget):
         layout.addWidget(self.channel_3_input,5,2)
         layout.addWidget(self.channel_3_output,5,3)
         layout.addWidget(self.channel_submit,6,0)
-        layout.addWidget(self.waveform_section_label,7,0)
-        layout.addWidget(self.waveform_type_label,8,0)
-        layout.addWidget(self.waveform_type_box,9,0)
         layout.addWidget(self.waveform_frequency_label,12,0)
         layout.addWidget(self.waveform_frequency_textline,13,0)
-        layout.addWidget(self.waveform_amplitude_label,14,0)
-        layout.addWidget(self.waveform_amplitude_textline,15,0)
-        layout.addWidget(self.waveform_shift_label,16,0)
-        layout.addWidget(self.waveform_shift_textline,17,0)
-        layout.addWidget(self.waveform_y_label,18,0)
-        layout.addWidget(self.waveform_y_textline,19,0)
-        layout.addWidget(self.type_output_label,20,0)
-        layout.addWidget(self.type_output_box,21,0)
-        layout.addWidget(self.multiple_waves,22,0)
         
         #Add Listeners
-        self.waveform_type_box.activated.connect(self.UpdateWaveform)
+        
         self.waveform_frequency_textline.textChanged.connect(self.UpdateWaveformFreq)
-        self.waveform_shift_textline.textChanged.connect(self.UpdateWaveformShift)
-        self.waveform_amplitude_textline.textChanged.connect(self.UpdateWaveformAmplitude)
-        self.waveform_y_textline.textChanged.connect(self.UpdateOffset)
-        self.type_output_box.activated.connect(self.UpdateOutputType)
-        self.multiple_waves.stateChanged.connect(self.MultipleWavesSetup)
         self.channel_submit.clicked.connect(self.SubmitChannels)
         
     def SubmitChannels(self):
@@ -393,87 +345,12 @@ class DigitalConfigTab (QWidget):
             elif self.channel_3_output.checkState() == QtCore.Qt.Checked:
                 active_digital_channels.append('O3')
         print('Successfully reattributed channels with the listing: ',active_digital_channels)
-    def MultipleWavesSetup(self):
-        layout = self.layout
-        global digital_multiple_wave_types
-        if self.multiple_waves.isChecked():
-            layout.addWidget(self.waveform_type_box2,9,1)
-            layout.addWidget(self.waveform_frequency_textline2,13,1)
-            layout.addWidget(self.waveform_amplitude_textline2,15,1)
-            layout.addWidget(self.waveform_shift_textline2,17,1)
-            layout.addWidget(self.waveform_y_textline2,19,1)
-            digital_multiple_wave_types = True
-            self.waveform_type_box2.activated.connect(self.UpdateWaveform2)
-            self.waveform_frequency_textline2.textChanged.connect(self.UpdateWaveformFreq)
-            self.waveform_shift_textline2.textChanged.connect(self.UpdateWaveformShift)
-            self.waveform_amplitude_textline2.textChanged.connect(self.UpdateWaveformAmplitude)
-            self.waveform_y_textline2.textChanged.connect(self.UpdateOffset)
-        else:
-            self.waveform_type_box2.setParent(None)
-            self.waveform_frequency_textline2.setParent(None)
-            self.waveform_amplitude_textline2.setParent(None)
-            self.waveform_shift_textline2.setParent(None)
-            self.waveform_y_textline2.setParent(None)
-            digital_multiple_wave_types = False
-    def UpdateWaveform(self):
-        global digital_waveform
-        digital_waveform = self.waveform_type_box.currentText()
-        if digital_waveform == "Custom":
-            self.layout.addWidget(self.custom_file_label,6,0)
-            self.layout.addWidget(self.custom_file_textline,7,0)
-            self.custom_file_textline.textChanged.connect(self.UpdateCustomFile)
-        else:
-            self.custom_file_label.setParent(None)
-            self.custom_file_textline.setParent(None)
-    def UpdateWaveform2(self):
-        global digital_waveform2
-        digital_waveform2 = self.waveform_type_box2.currentText()
-        if digital_waveform2 == "Custom":
-            self.layout.addWidget(self.custom_file_textline2,7,1)
-            self.custom_file_textline2.textChanged.connect(self.UpdateCustomFile2)
-        else:
-            self.custom_file_textline2.setParent(None)
     def UpdateWaveformFreq(self):
         global digital_wave_frequency
         digital_wave_frequency = self.waveform_frequency_textline.text()
         if self.multiple_wave_types.isChecked():
             global digital_wave_frequency2
             digital_wave_frequency2 = self.waveform_frequency_textline2.text()
-    def UpdateWaveformShift(self):
-        global digital_wave_shift
-        digital_wave_shift = self.waveform_shift_textline.text()
-    def UpdateWaveformAmplitude(self):
-        global digital_wave_amplitude
-        digital_wave_amplitude = self.waveform_amplitude_textline.text()
-        if self.multiple_wave_types.isChecked():
-            global digital_wave_amplitude2
-            digital_wave_amplitude2 = self.waveform_amplitude_textline2.text()
-    def UpdateCustomFile(self):
-        global digital_custom_file
-        digital_custom_file = self.custom_file_textline.text()
-    def UpdateCustomFile2(self):
-        global digital_custom_file2
-        digital_custom_file2 = self.custom_file_textline2.text()
-    def UpdateOffset(self):
-        global digital_wave_offset
-        global digital_wave_amplitude
-        temp = float(self.waveform_y_textline.text())
-        if temp + digital_wave_amplitude > 10 or temp - digital_wave_amplitude < -10:
-            self.waveform_y_textline.setText("OUT OF BOUNDS OFFSET")
-        else:
-            digital_wave_offset = temp
-        if self.multiple_wave_types.isChecked():
-            global digital_wave_offset2
-            global digital_wave_amplitude2
-            temp = float(self.waveform_y_textline2.text())
-            if temp + digital_wave_amplitude2 > 10 or temp - digital_wave_amplitude2 < -10:
-                self.waveform_y_textline2.setText("OUT OF BOUNDS OFFSET")
-            else:
-                digital_wave_offset2 = temp
-    def UpdateOutputType(self):
-        global digital_wave_io_type
-        digital_wave_io_type =  self.type_output_box.currentText()
-        
 
 class DisplayTab (QWidget) :
     graph = pg.PlotWidget(name='Plot1')
@@ -527,6 +404,9 @@ class DisplayTab (QWidget) :
         self.button_MCUSB_generate.clicked.connect(self.on_generate_button_clicked)
         self.button_wave_stop.clicked.connect(self.on_wave_stop_clicked)
         self.button_MCUSB_generate_digital.clicked.connect(self.on_digenerate_button_clicked)
+
+        global t_buffer
+        t_buffer = self.t
    
     def updateData(self):
         filename = str(self.graph_filename_textline.text())
@@ -556,6 +436,8 @@ class DisplayTab (QWidget) :
     
     def on_start_button_clicked(self):
         global active_analog_channels
+        global sample_rate
+        sample_rate = int(self.sample_rate_edit.text())
         high_chan = -100
         low_chan = 100
         for i in active_analog_channels:
@@ -606,6 +488,7 @@ class DisplayTab (QWidget) :
         if high_chan == -100:
             low_chan = 0
             high_chan = 0
+        print(multiple_wave_types)
         if multiple_wave_types:
             global waveform2
             global wave_frequency2
@@ -644,6 +527,18 @@ class DisplayTab (QWidget) :
         global digital_wave_io_type
         global digital_multiple_wave_types
         global active_digital_channels
+        low_chan = 100
+        high_chan = -100
+        for i in active_digital_channels:
+            if i[0] == 'O':
+                temp = int(i[1])
+                if low_chan > temp:
+                    low_chan = temp
+                if high_chan < temp:
+                    high_chan = temp
+        if low_chan == 100:
+            low_chan = 0
+            high_chan = 0
         if digital_multiple_wave_types:
             global digital_waveform2
             global digital_wave_frequency2
@@ -654,27 +549,28 @@ class DisplayTab (QWidget) :
                 if waveform2 == "Custom" :
                     talk_to_server(['Digital',True,digital_waveform,digital_custom_file,digital_wave_frequency,
                                     digital_waveform2,digital_custom_file2,digital_wave_frequency2,
-                                    int(self.sample_rate_edit.text()),digital_wave_io_type])
+                                    int(self.sample_rate_edit.text()),digital_wave_io_type,high_chan,low_chan])
                 else:
                     talk_to_server(['Digital',True,digital_waveform,digital_custom_file,digital_wave_frequency,digital_waveform2,
                                     digital_wave_frequency2,digital_wave_shift2,digital_wave_amplitude2,
-                                    digital_wave_offset2,int(self.sample_rate_edit.text()),digital_wave_io_type])
+                                    digital_wave_offset2,int(self.sample_rate_edit.text()),digital_wave_io_type,high_chan,low_chan])
             else:
                 if waveform2 == "Custom" :
                     talk_to_server(['Digital',True,digital_waveform,digital_wave_frequency,digital_wave_shift,digital_wave_amplitude,
                                     digital_wave_offset,digital_waveform2,digital_custom_file2,digital_wave_frequency2,
-                                    int(self.sample_rate_edit.text()),digital_wave_io_type])
+                                    int(self.sample_rate_edit.text()),digital_wave_io_type,high_chan,low_chan])
                 else:    
                     talk_to_server(['Digital',True,digital_waveform,digital_wave_frequency,digital_wave_shift,digital_wave_amplitude,
                                     digital_wave_offset,digital_waveform2,digital_wave_frequency2,digital_wave_shift2,
                                     digital_wave_amplitude2,digital_wave_offset2,int(self.sample_rate_edit.text()),
-                                    digital_wave_io_type])
+                                    digital_wave_io_type,high_chan,low_chan])
         else:
             if waveform == "Custom" :
-                talk_to_server(['Digital',False,digital_waveform,digital_custom_file,digital_wave_frequency,int(self.sample_rate_edit.text()),digital_wave_io_type])
+                talk_to_server(['Digital',False,digital_waveform,digital_custom_file,digital_wave_frequency,
+                                int(self.sample_rate_edit.text()),digital_wave_io_type,high_chan,low_chan])
             else:
                 talk_to_server(['Digital',False,digital_waveform,digital_wave_frequency,digital_wave_shift,digital_wave_amplitude,
-                                digital_wave_offset,int(self.sample_rate_edit.text()),digital_wave_io_type])
+                                digital_wave_offset,int(self.sample_rate_edit.text()),digital_wave_io_type,high_chan,low_chan])
 
     def on_wave_stop_clicked(self):
         talk_to_server('Stop Wave')
@@ -701,8 +597,10 @@ window.show()
 class HDF5Plot(pg.PlotCurveItem):
     def __init__(self, *args, **kwds):
         self.hdf5 = None
-        self.rate = sample_rate_edit
-        self.limit = self.rate * t # maximum number of samples to be plotted
+        global sample_rate
+        self.rate = sample_rate
+        global t_buffer
+        self.limit = self.rate * t_buffer # maximum number of samples to be plotted
         pg.PlotCurveItem.__init__(self, *args, **kwds)
         
     def setHDF5(self, data):
