@@ -40,15 +40,7 @@ digital_wave_offset = 0
 digital_wave_frequency = 10
 digital_wave_shift = 0
 digital_wave_amplitude = 1
-digital_custom_file = None
 digital_wave_io_type = 'Continuous'
-digital_waveform2 = 'Square'
-digital_wave_offset2 = 0
-digital_wave_frequency2 = 10
-digital_wave_shift2 = 0
-digital_wave_amplitude2 = 1
-digital_custom_file2 = None
-digital_multiple_wave_types = False
 active_digital_channels = []
 
 sample_rate = 1000
@@ -539,38 +531,8 @@ class DisplayTab (QWidget) :
         if low_chan == 100:
             low_chan = 0
             high_chan = 0
-        if digital_multiple_wave_types:
-            global digital_waveform2
-            global digital_wave_frequency2
-            global digital_wave_shift2
-            global digital_wave_amplitude2
-            global digital_wave_offset2
-            if waveform == "Custom" :
-                if waveform2 == "Custom" :
-                    talk_to_server(['Digital',True,digital_waveform,digital_custom_file,digital_wave_frequency,
-                                    digital_waveform2,digital_custom_file2,digital_wave_frequency2,
-                                    int(self.sample_rate_edit.text()),digital_wave_io_type,high_chan,low_chan])
-                else:
-                    talk_to_server(['Digital',True,digital_waveform,digital_custom_file,digital_wave_frequency,digital_waveform2,
-                                    digital_wave_frequency2,digital_wave_shift2,digital_wave_amplitude2,
-                                    digital_wave_offset2,int(self.sample_rate_edit.text()),digital_wave_io_type,high_chan,low_chan])
-            else:
-                if waveform2 == "Custom" :
-                    talk_to_server(['Digital',True,digital_waveform,digital_wave_frequency,digital_wave_shift,digital_wave_amplitude,
-                                    digital_wave_offset,digital_waveform2,digital_custom_file2,digital_wave_frequency2,
-                                    int(self.sample_rate_edit.text()),digital_wave_io_type,high_chan,low_chan])
-                else:    
-                    talk_to_server(['Digital',True,digital_waveform,digital_wave_frequency,digital_wave_shift,digital_wave_amplitude,
-                                    digital_wave_offset,digital_waveform2,digital_wave_frequency2,digital_wave_shift2,
-                                    digital_wave_amplitude2,digital_wave_offset2,int(self.sample_rate_edit.text()),
-                                    digital_wave_io_type,high_chan,low_chan])
-        else:
-            if waveform == "Custom" :
-                talk_to_server(['Digital',False,digital_waveform,digital_custom_file,digital_wave_frequency,
-                                int(self.sample_rate_edit.text()),digital_wave_io_type,high_chan,low_chan])
-            else:
-                talk_to_server(['Digital',False,digital_waveform,digital_wave_frequency,digital_wave_shift,digital_wave_amplitude,
-                                digital_wave_offset,int(self.sample_rate_edit.text()),digital_wave_io_type,high_chan,low_chan])
+        talk_to_server(['Digital',digital_waveform,digital_wave_frequency,digital_wave_shift,digital_wave_amplitude,
+                            digital_wave_offset,int(self.sample_rate_edit.text()),digital_wave_io_type,high_chan,low_chan])
 
     def on_wave_stop_clicked(self):
         talk_to_server('Stop Wave')
