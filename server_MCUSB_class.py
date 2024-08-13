@@ -444,8 +444,9 @@ def MCUSB_do(waveform_stats):
     digital_low_port_index = int(waveform_stats[8])
     digital_high_port_index = int(waveform_stats[7])
     scan_options = ScanOption.CONTINUOUS
-    samples_per_channel = int(waveform_stats[5])
     sample_rate = int(waveform_stats[5])
+    samples_per_channel = sample_rate * int(waveform_stats[1])
+    samples_per_cycle = int(sample_rate * int(wave_info[1]))
     if waveform_stats[6] == "Single":
          scan_options = ScanOption.SINGLEIO
     channel_descriptors = []
@@ -480,7 +481,6 @@ def MCUSB_do(waveform_stats):
                                     channel_descriptors, amplitudes)
 
     num_channels = len(channel_descriptors)
-    samples_per_cycle = waveform_stats[2] * num_channels
     # Create a buffer for output data.
     DAQ.out_buffer = create_float_buffer(num_channels, samples_per_channel)
     # Fill the output buffer with data.

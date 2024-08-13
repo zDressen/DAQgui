@@ -35,11 +35,11 @@ multiple_wave_types = False
 active_analog_channels = []
 
 # Digital Wave Variables
-digital_waveform = 'Square'
+digital_waveform = 'Sine'
 digital_wave_offset = 0
 digital_wave_frequency = 10
 digital_wave_shift = 0
-digital_wave_amplitude = 1
+digital_wave_amplitude = 10
 digital_wave_io_type = 'Continuous'
 active_digital_channels = []
 
