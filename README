@@ -54,6 +54,21 @@ After running these commands, the Linux VM should be able to access the USB Devi
 
 
 TO BE DONE:
--Input display vs Output Display?
--Repair Digital Output
 -Multiple Input
+-Analog Input Config Tab 
+  *Split Analog Config into Output and Input
+  *Allow selection of visibility and range
+-Digital Control Tab
+  *Split into a config and control tab
+  *Remove Frequency, also instantaneous control
+  *Output and Input Channels should ideally be able to freely move between High and Low
+  *Review documentation here
+-Display Tab
+  *This should be renamed Acquisition
+  *This should be able to start, stop, etc acquisition
+  *Make the plot easier to use and more functional
+-Other
+  *External Clock Capability
+  *Counter Capability
+  *Synchronization
+  *Multiple Boxes
