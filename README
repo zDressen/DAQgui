@@ -49,26 +49,31 @@ $ usbipd bind --busid #-#
 $ usbipd attach --wsl --busid #-#
 After running these commands, the Linux VM should be able to access the USB Device and function as normal.
 
+COLLECTED DATA:
+All collected data will be stored in an hdf file. This file, by default, is labeled "test"+run #+".hdf but this can be changed in the textbar at the top BEFORE acquisition.
+***** Make sure this is true
+Data is then read by the gui into the plot but can be accessed through and hdf reading application.
+
 
 
 
 
 TO BE DONE:
 -Multiple Input
--Analog Input Config Tab 
-  *Split Analog Config into Output and Input
+ *Analog shoud be working
+ *Digitial should closely follow
+-Analog Input Config Tab
   *Allow selection of visibility and range
 -Digital Control Tab
   *Split into a config and control tab
-  *Remove Frequency, also instantaneous control
-  *Output and Input Channels should ideally be able to freely move between High and Low
-  *Review documentation here
+  *Add instantaneous control
+     -Working theory here is to have a button that changes a global variable in the server, activating the change from the client near isntantaneously
+  *Output and Input Channels should ideally be able to freely move between On and Off (0 and 1)
 -Display Tab
-  *This should be renamed Acquisition
-  *This should be able to start, stop, etc acquisition
   *Make the plot easier to use and more functional
+     -This is partly handled by the analog input configuration channel
 -Other
-  *External Clock Capability
+  *External Clock Capability - Brendan did this i think, need to look into it!
   *Counter Capability
   *Synchronization
   *Multiple Boxes
