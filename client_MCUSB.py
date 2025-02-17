@@ -392,7 +392,7 @@ class AnalogInTab (QWidget):
         layout.addWidget(self.channel_submit_button,9,0)
 
         self.channel_submit_button.clicked.connect(self.SubmitChannels)
-    
+
     def SubmitChannels(self):
         global analogIn_channels
         global analog_chans_plot
@@ -521,7 +521,10 @@ class DigitalControlTab (QWidget) :
 
 class MCCUSBControlTab (QWidget) :
     initiate_button = QPushButton("Confirm Device Settings")
+    input_mode_label = QLabel("Input Type:")
     input_mode = QComboBox()
+    sample_rate_label = QLabel("Sample Rate (Hz):")
+    sample_rate_edit = QLineEdit('1000')
 
     input_mode.addItem("Single-Ended")
     input_mode.addItem("Differential")
@@ -532,7 +535,11 @@ class MCCUSBControlTab (QWidget) :
         layout = QGridLayout()
         self.setLayout(layout)
 
-        layout.addWidget(self.initiate_button,0,0)
+        layout.addWidget(self.input_mode_label,0,0)
+        layout.addWidget(self.input_mode,0,1)
+        layout.addWidget(self.sample_rate_label, 1, 0)
+        layout.addWidget(self.sample_rate_edit, 1, 1)
+        layout.addWidget(self.initiate_button,2,0,2,1)
 
         self.initiate_button.clicked.connect(self.reinitiateMCCUSB)
 
@@ -540,6 +547,7 @@ class MCCUSBControlTab (QWidget) :
         global analogIn_channels
         global active_digitalIn_channels
         global sample_rate
+        sample_rate = int(self.sample_rate_edit.text())
         ahigh_chan = -100
         alow_chan = 100
         for i in analogIn_channels:
@@ -580,8 +588,6 @@ class AcquisitionTab (QWidget) :
     button_MCUSB_start = QPushButton('Start')
     button_MCUSB_stop = QPushButton('Stop')
     message2 = QLabel('Run number:')
-    message1 = QLabel("Sample Rate (Hz):")
-    sample_rate_edit = QLineEdit('1000')
     MCUSB_run_no_textline = QLineEdit("1")
     t = QtCore.QTimer()
     textbox = QLineEdit()
@@ -600,8 +606,6 @@ class AcquisitionTab (QWidget) :
         layout.addWidget(self.graph_update_button, 1,5)
         layout.addWidget(self.graph_stopupdate_button, 1,6)
         layout.addWidget(self.graph,2,1,6,6)
-        layout.addWidget(self.message1, 3, 0)# button goes in upper-left
-        layout.addWidget(self.sample_rate_edit, 4, 0)
         layout.addWidget(self.message2,5,0)
         layout.addWidget(self.MCUSB_run_no_textline,6,0)
         
@@ -649,7 +653,6 @@ class AcquisitionTab (QWidget) :
     def on_start_button_clicked(self):
         global sample_rate
         global analogIn_channels
-        sample_rate = int(self.sample_rate_edit.text())
         high_chan = -100
         low_chan = 100
         for chan in analogIn_channels:
