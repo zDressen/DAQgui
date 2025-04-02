@@ -627,6 +627,7 @@ class AcquisitionTab (QWidget) :
         ss = len(dset)
         yd = np.zeros((dset.shape[0],len(analog_chans_plot)))
         chan = 0
+        self.graph.clear()
         colors = ["red","orange","yellow","green","blue","purple","white"]
         for i in analog_chans_plot:
             if self.graph_CheckBox1.isChecked():

@@ -11,7 +11,6 @@ import os
 import h5py
 import numpy as np
 import pandas as pd
-import openpyxl
 from openpyxl import Workbook, load_workbook
 from datetime import datetime
 import argparse
@@ -922,6 +921,7 @@ def event_callback_function(event_callback_args):
             data = scan_event_parameters.buffer[startIndex:endIndex]
 
         data = np.reshape(data,(-1,chan_count))
+        print(data)
         dfIndex = np.arange(total_events - user_data.buffer_store, total_events, dtype=int)
         #df= pd.DataFrame(data, columns=DAQ.columnNames[:chan_count], index=dfIndex)
         #df.to_hdf(DAQ.OUTPUT_FILENAME, key=DAQ.hdfKey, format='t', data_columns=True, mode='a', append=True, complib=DAQ.comp_lib, complevel=DAQ.comp_level)
